@@ -9,18 +9,18 @@ terraform destroy
 ### Pre-requisites to implement this project:
 
 AWSCLI Install:
-
+```bash
   curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
   sudo apt install unzip
   unzip awscliv2.zip
   sudo ./aws/install
-
+```
   
 Configure AWSCLI:
-
+```bash
 aws --version
 aws configure
-
+```
 IAM role console user > security > access key
 > This project will be deployed on United States (Oregon) - us-west-2 but deploy your preffered region.
 
@@ -128,49 +128,63 @@ Create an AWS USER mega-admin and Attach Policy > Administrator Access
 jenkins install......................................
 1. Install Java
 Jenkins requires Java to run. Ensure you have the required version (Java 21 or later) installed:
-
+```bash
 sudo apt update
 sudo apt install -y fontconfig openjdk-21-jre
 java -version
-
+```
 
 3. Add the Jenkins Repository
 Follow these commands exactly to add the official repository and the GPG key, which allows apt to verify the package authenticity:
 
 # Create the keyrings directory if it doesn't exist
+```bash
 sudo mkdir -p /etc/apt/keyrings
-
+```
 # Download the Jenkins GPG key
+```bash
 sudo wget -O /etc/apt/keyrings/jenkins-keyring.asc https://pkg.jenkins.io/debian-stable/jenkins.io-2026.key
+```
 
 # Add the repository to your system
+```bash
 echo "deb [signed-by=/etc/apt/keyrings/jenkins-keyring.asc] https://pkg.jenkins.io/debian-stable binary/" | sudo tee /etc/apt/sources.list.d/jenkins.list > /dev/null
+```
 3. Install Jenkins
+
+```bash
 sudo apt update
 sudo apt install -y jenkins
 
-4. Start and Verify Jenkins
-
+```
+5. Start and Verify Jenkins
+```bash
 sudo systemctl start jenkins
 sudo systemctl enable jenkins
 sudo systemctl status jenkins
-
+```
 
 6. Access the Web Interface
+   ```bash
 sudo ufw allow 8080
+```
 
 2. **Unlock Jenkins:** Retrieve your initial administrative password by running:
+```bash
    
    sudo cat /var/lib/jenkins/secrets/initialAdminPassword
 
+```
+
 ###################################################################################################
 docker install:
-
+```bash
 sudo apt update
 
 sudo apt-get install docker.io -y
 
 sudo usermod -aG docker ubuntu && newgrp docker
+```
 
 
 ########################################################
