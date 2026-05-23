@@ -1,10 +1,11 @@
 # terraform-eks-jenkin
+```bash
 terraform version
 terraform init
 terraform plan
 terraform apply
 terraform destroy
-
+```
 ### Pre-requisites to implement this project:
 
 AWSCLI Install:
