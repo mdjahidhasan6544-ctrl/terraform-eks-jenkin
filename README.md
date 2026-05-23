@@ -165,14 +165,17 @@ sudo systemctl status jenkins
 ```
 
 6. Access the Web Interface
-   ```bash
+```bash
+
 sudo ufw allow 8080
+
 ```
 
 2. **Unlock Jenkins:** Retrieve your initial administrative password by running:
+
 ```bash
    
-   sudo cat /var/lib/jenkins/secrets/initialAdminPassword
+sudo cat /var/lib/jenkins/secrets/initialAdminPassword
 
 ```
 
