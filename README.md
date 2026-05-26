@@ -253,3 +253,259 @@ trivy --version
   - Blue Ocean
 
 
+## Store SonarQube token in Jenkins
+```bash
+Go to <machine_ip>:9000
+Create SonarQube Token:
+  - Administration > Security > users > Tokens
+  - Generate the token and copy it, store it to Jenkins > Credentials > Global Credentials > Kind: Secret text
+  - Connect the created Sonar TOKEN with Jenkins > Tools > Search: SonarQube Scanner installations
+  - Hit: Add SonarQube Scanner > Name: Sonar > CheckMark: Install Automatically > Install from Maven Central > Save
+```
+## Integrate SonarQube with Jenkins
+```bash
+  Jenkins > manage > system > SonarQube servers > SonarQube installations:
+  Name: Sonar > Server URL: <Machine_IP>:9000 > Server authentication token: Select sonar-key from dropdown
+```
+
+## Create SonarQube Webhook for Jenkins
+```bash
+  SonarQube > Administration > Configuration > Webhooks
+  URL to use (Jenkins url): <ec2-machine-ip>:8080/sonarqube-webhook
+
+## Add OWASP Dependency Check (it  might take 20 minutes to get installed):
+```bash
+Jenlkins > Manage > Tools > Dependency-Check installations
+Hit: Add Dependency-Check
+Input: Name = OWASP > Check Mark: Install automatically > + Add installer > Select: Install from github.com > Save
+
+## Add GitHub PAT Key to Jenkins
+```bash
+  - Create a GitHub PAT Key
+  - Add the key to Jenkins > Credentials > Global Credentials > Kind: Username with password
+```
+
+
+## Install ArgoCD on Master Machine
+- <b>Install and Configure ArgoCD (Master Machine)</b>
+  - <b>Create argocd namespace</b>
+  ```bash
+  kubectl create namespace argocd
+  ```
+  - <b>Apply argocd manifest</b>
+  ```bash
+  kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+  ```
+  - <b>Make sure all pods are running in argocd namespace</b>
+  ```bash
+  watch kubectl get pods -n argocd
+  ```
+  - <b>Install argocd CLI</b>
+  ```bash
+  sudo curl --silent --location -o /usr/local/bin/argocd https://github.com/argoproj/argo-cd/releases/download/v2.4.7/argocd-linux-amd64
+  ```
+  - <b>Provide executable permission</b>
+  ```bash
+  sudo chmod +x /usr/local/bin/argocd
+  ```
+  - <b>Check argocd services</b>
+  ```bash
+  kubectl get svc -n argocd
+  ```
+  - <b>Change argocd server's service from ClusterIP to NodePort</b>
+  ```bash
+  kubectl patch svc argocd-server -n argocd -p '{"spec": {"type": "NodePort"}}'
+  ```
+  - <b>Confirm service is patched or not</b>
+  ```bash
+  kubectl get svc -n argocd
+  ```
+  ## Check ArgoCd in Node Machine (Not in Master)
+  - <b> Check the port where ArgoCD server is running (Type should be NodePort now) and expose (i.e. port 80:30169 argocd-server) it on security groups of a worker node (mega-mega-Node not mega node)</b>
+
+  - <b>Access it on browser, click on advance and proceed with</b>
+  ```bash
+  <public-ip-worker>:<port> i.e.: <worker_ip>:argocd-server-port 30169
+  proceed to unsafe
+  ```
+
+  - <b>Fetch the initial password of argocd server</b>
+  ```bash
+  kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d; echo
+  ```
+  - <b>Username: admin</b>
+  - <b> Now, go to <mark>User Info</mark> and update your argocd password
+  - <b> set new password </b>
+
+
+## Connect GitHub Repo in Argocd
+```bash
+  Settings > Repositories > Connect Repo > VIA HTTP/HTTPS (for public repo)
+  For Private repo: user - github-user-name, password - create a github PAT key (i.e. argocd-key)
+```
+## Add Cluster in Argocd
+```bash
+  Login to ArgoCD in terminal (master machine terminal):
+    $ argocd login <argocd-url> --username admin
+      example: argocd login 44.255.55.146:32672 --username admin
+
+  Check ArgoDC Cluster List:
+    $ argocd cluster list (you should see default cluster)
+
+  Get context:
+    kubectl config get-contexts
+
+  Add cluster information to inform ArgoCD where to deploy:
+    $ argocd cluster add cluster-name-from-context --name any-name
+      Example: argocd cluster add mega-project-user@mega.us-west-2.eksctl.io --name mega-ekscluster
+            mega-project-user@mega.us-west-2.eksctl.io is the concept of RBAC
+
+```
+## Create an app in Argocd (browser)
+```bash
+  Applications > New app:
+  - Set these: Application Name: mega | Project Name: default | Sync Policy: Automatic
+  - Check mark: Enable Auto-Sync, Prune Resources, Self Heal, Auto-Create Namespace
+  - SOURCE: Resource URL: mega project GitHub URL, Revision: main (gitHub branch)
+  - Path: kubernetes (In GitHub, kubenetes manifest directory is "kubernetes")
+  - DESTINATION: select the cluster (not default one)
+  - Namespace: mega
+```
+
+## Add FrontEnd and BackEnd services NodePort to Node Instance (worker) Security group:
+```bash
+  backend nodePort: 31100
+  frontend nodePort: 31000
+```
+
+
+## Add Shared Library Repo for Jenkins to pick up the Shared Library:
+```bash
+Repo URL: https://github.com/bongodev/jenkins-shared-library
+Jenkins > manage > System > Global Trusted Pipeline Libraries: Name: Shared | Project Repository: Repo URL | Credentials: Select GitHub-PAT-Key
+```
+
+## Add DockerHub PAT key to Jenkins:
+```bash
+  Jenkins > Credentials > Global Credentials
+```
+
+## SetUP CI Pipeline in Jenkins:
+```bash
+  Jenkins > + New Item > Create CI Pipeline with Jenkinsfile code (from repo)
+  Build the job with image tag (first build might take 20 minutes)
+```
+
+## SetUP CD Pipeline in Jenkins:
+```bash
+  Jenkins > + New Item > Create CD Pipeline with GitOps>Jenkinsfile code (from repo)
+  Build the job
+```
+
+## Do this before Building/hitting CI and CD Jenkins jobs:
+```bash
+  Go to Automations directory:
+  File: updatefrontendnew.sh > change INSTANCE_ID=<ec2-node-machine-ID where your app will be running>
+  File: updatebackendnew.sh > change INSTANCE_ID=<ec2-node-machine-ID where your app will be running>
+```
+
+#
+## Setup Application Monitor on EKS cluster using prometheus and grafana via HELM (On Master machine)
+- Install Helm Chart
+```bash
+curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
+```
+```bash
+chmod 700 get_helm.sh
+```
+```bash
+./get_helm.sh
+```
+
+#
+-  Add Helm Stable Charts for Your Local Client
+```bash
+helm repo add stable https://charts.helm.sh/stable
+```
+
+#
+- Add Prometheus Helm Repository
+```bash
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+```
+
+#
+- Create Prometheus Namespace
+```bash
+kubectl create namespace prometheus
+kubectl get ns
+```
+
+#
+- Install Prometheus using Helm
+```bash
+helm install stable prometheus-community/kube-prometheus-stack -n prometheus
+```
+
+#
+- Verify prometheus installation
+```bash
+kubectl get pods -n prometheus
+```
+
+#
+- Check the services file (svc) of the Prometheus
+```bash
+kubectl get svc -n prometheus
+```
+
+#
+- Expose Prometheus and Grafana to the external world through Cluster IP to NodePort
+> [!Important]
+> Edit Type: ClusterIp to NodePort, make sure you save the file.
+
+```bash
+kubectl edit svc stable-kube-prometheus-sta-prometheus -n prometheus
+```
+
+#
+- Verify service
+```bash
+$ kubectl get svc -n prometheus
+- It should be stable-kube-prometheus-sta-operator
+```
+- Add Prometheus stable-kube-prometheus-sta-operator IP to your EC2 Node Machine's SecurityGroup
+#
+- Now,let’s change the SVC file of the Grafana and expose it to the outer world (Edit Type: ClusterIp to NodePort)
+```bash
+kubectl edit svc stable-grafana -n prometheus
+
+```
+
+#
+- Check grafana service
+```bash
+kubectl get svc -n prometheus
+It should be stable-graphana 
+```
+- Add Graphana stable-graphana IP to your EC2 Node Machine's SecurityGroup
+#
+- Get a password for grafana
+```bash
+kubectl get secret --namespace prometheus stable-grafana -o jsonpath="{.data.admin-password}" | base64 --decode ; echo
+```
+> [!Note]
+> Username: admin
+
+#
+- Now, view the Dashboard in Grafana
+
+#
+## ⚠️ Clean Up EKS Cluster to save money
+- <b id="Clean">Delete eks cluster</b>
+```bash
+eksctl delete cluster --name=mega --region=us-west-2
+Delete the master machine
+```
+
+
