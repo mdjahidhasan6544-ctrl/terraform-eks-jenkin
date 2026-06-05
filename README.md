@@ -47,7 +47,16 @@ aws configure
 Create an AWS USER mega-admin and Attach Policy > Administrator Access
   - Create Access_key and Secret_key
 ```
+DOCKER COMPOSE INSTALL
+```
+mkdir -p ~/.docker/cli-plugins/
 
+curl -SL https://github.com/docker/compose/releases/latest/download/docker-compose-linux-x86_64 \
+  -o ~/.docker/cli-plugins/docker-compose
+
+chmod +x ~/.docker/cli-plugins/docker-compose
+
+```
 ## Create an AWS Role Called mega-ec2-role and attach it to Master machine
   - Create Role:
     AWS IAM > roles > Create role > AWS Service > Use case (ec2) > Next > AdministratorAccess> Role name (mega-ec2-role) > Create Role
