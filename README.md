@@ -57,6 +57,18 @@ curl -SL https://github.com/docker/compose/releases/latest/download/docker-compo
 chmod +x ~/.docker/cli-plugins/docker-compose
 
 ```
+
+```
+nginx install: sudo apt install nginx -y
+Start Nginx: sudo systemctl start nginx
+Enable autostart on boot: sudo systemctl enable nginx
+Check if it is running: sudo systemctl status nginx
+
+
+```
+
+```
+
 ## Create an AWS Role Called mega-ec2-role and attach it to Master machine
   - Create Role:
     AWS IAM > roles > Create role > AWS Service > Use case (ec2) > Next > AdministratorAccess> Role name (mega-ec2-role) > Create Role
